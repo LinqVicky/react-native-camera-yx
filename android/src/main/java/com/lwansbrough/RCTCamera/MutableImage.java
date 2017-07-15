@@ -23,6 +23,12 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+import android.graphics.Canvas;  
+import android.graphics.Color;  
+import android.graphics.Paint;  
+import android.graphics.Typeface;  
+import android.graphics.Bitmap.Config; 
+
 public class MutableImage {
     private static final String TAG = "RNCamera";
 
@@ -31,9 +37,9 @@ public class MutableImage {
     private Metadata originalImageMetaData;
     private boolean hasBeenReoriented = false;
 
-    public MutableImage(byte[] originalImageData) {
+    public MutableImage(byte[] originalImageData,String watermark) {
         this.originalImageData = originalImageData;
-        this.currentRepresentation = toBitmap(originalImageData);
+        this.currentRepresentation = toBitmap(originalImageData,watermark);
     }
 
     public void mirrorImage() throws ImageMutationFailedException {
@@ -127,11 +133,32 @@ public class MutableImage {
         this.hasBeenReoriented = true;
     }
 
-    private static Bitmap toBitmap(byte[] data) {
+    private static Bitmap toBitmap(byte[] data,String watermark) {
         try {
             ByteArrayInputStream inputStream = new ByteArrayInputStream(data);
             Bitmap photo = BitmapFactory.decodeStream(inputStream);
             inputStream.close();
+            //添加文字水印
+            if(null != watermark && !watermark.isEmpty()){
+                int w = photo.getWidth();  
+                int h = photo.getHeight();  
+                Bitmap bmpTemp = Bitmap.createBitmap(w, h, Config.ARGB_8888);  
+                String mstrTitle = watermark;// "时间:2017-07-15 15:00:00;地点:软件园二期观日路46号";
+                Canvas canvas = new Canvas(bmpTemp);  
+                Paint p = new Paint();  
+                String familyName = "宋体";  
+                Typeface font = Typeface.create(familyName, Typeface.NORMAL);  
+                p.setColor(Color.RED);  
+                p.setTypeface(font);  
+                p.setTextSize(20);  
+                canvas.drawBitmap(photo, 0, 0, p);  
+                //文字画的地方  
+                canvas.drawText(mstrTitle, 0, h-30, p);  
+                canvas.save(Canvas.ALL_SAVE_FLAG);  
+                canvas.restore();  
+
+                return bmpTemp;
+            }
             return photo;
         } catch (IOException e) {
             throw new IllegalStateException("Will not happen", e);
