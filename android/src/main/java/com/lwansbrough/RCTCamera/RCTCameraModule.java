@@ -538,7 +538,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                 AsyncTask.execute(new Runnable() {
                     @Override
                     public void run() {
-                        processImage(new MutableImage(data), options, promise);
+                        processImage(new MutableImage(data,options.getString("watermark")), options, promise);
                     }
                 });
 
