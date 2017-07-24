@@ -21,6 +21,11 @@ public class RCTCamera {
     private static final Resolution RESOLUTION_480P = new Resolution(853, 480); // 480p shoots for a 16:9 HD aspect ratio, but can otherwise fall back/down to any other supported camera sizes, such as 800x480 or 720x480, if (any) present. See getSupportedPictureSizes/getSupportedVideoSizes below.
     private static final Resolution RESOLUTION_720P = new Resolution(1280, 720);
     private static final Resolution RESOLUTION_1080P = new Resolution(1920, 1080);
+    private static final Resolution RESOLUTION_LOW = new Resolution(240, 320);
+    private static final Resolution RESOLUTION_NORMAL = new Resolution(480, 640);
+    private static final Resolution RESOLUTION_DEFAULT = new Resolution(720, 1280);
+    private static final Resolution RESOLUTION_MID = new Resolution(960, 1280);
+    private static final Resolution RESOLUTION_HIGH = new Resolution(1200, 760);
     private boolean _barcodeScannerEnabled = false;
     private List<String> _barCodeTypes = null;
     private int _orientation = -1;
@@ -96,20 +101,6 @@ public class RCTCamera {
         return bestSize;
     }
 
-    private Camera.Size getCustomSize(List<Camera.Size> supportedSizes) {
-        Camera.Size customSize = null;
-        for (Camera.Size size : supportedSizes) {
-            //parameters.setPictureSize(1280, 720);  //640*480 34912
-            if(size.width==1280 && size.height == 720){
-                customSize = size;
-                break;
-            }
-        }
-        if(customSize==null){
-             customSize = supportedSizes.get(supportedSizes.size() / 4);
-        }
-        return customSize;
-    }
     private Camera.Size getSmallestSize(List<Camera.Size> supportedSizes) {
         Camera.Size smallestSize = null;
         for (Camera.Size size : supportedSizes) {
@@ -233,7 +224,6 @@ public class RCTCamera {
         switch (captureQuality) {
             case RCTCameraModule.RCT_CAMERA_CAPTURE_QUALITY_LOW:
                 pictureSize = getSmallestSize(supportedSizes); 
-                //supportedSizes.get(supportedSizes.size() / 1024);
                 break;
             case RCTCameraModule.RCT_CAMERA_CAPTURE_QUALITY_MEDIUM:
                 pictureSize = supportedSizes.get(supportedSizes.size() / 2);
@@ -251,17 +241,26 @@ public class RCTCamera {
             case RCTCameraModule.RCT_CAMERA_CAPTURE_QUALITY_720P:
                 pictureSize = getBestSize(supportedSizes, RESOLUTION_720P.width, RESOLUTION_720P.height);
                 break;
-            case RCTCameraModule.RCT_CAMERA_CAPTURE_QUALITY_1080P:
-                pictureSize = getBestSize(supportedSizes, RESOLUTION_1080P.width, RESOLUTION_1080P.height);
+                //增加拍照分辨率选项 
+            case RCTCameraModule.RCT_CAMERA_CAPTURE_QUALITY_CUSTOM_LOW:
+                pictureSize = getBestSize(supportedSizes, RESOLUTION_LOW.width, RESOLUTION_LOW.height);
                 break;
-            case RCTCameraModule.RCT_CAMERA_CAPTURE_QUALITY_CUSTOM:
-                pictureSize = getCustomSize(supportedSizes); //1280, 720 图片差不多200KB，不影响上传。
+            case RCTCameraModule.RCT_CAMERA_CAPTURE_QUALITY_CUSTOM_NORMAL:
+                pictureSize = getBestSize(supportedSizes, RESOLUTION_NORMAL.width, RESOLUTION_NORMAL.height);
+                break;
+            case RCTCameraModule.RCT_CAMERA_CAPTURE_QUALITY_CUSTOM_DEFAUL:
+                pictureSize = getBestSize(supportedSizes, RESOLUTION_DEFAULT.width, RESOLUTION_DEFAULT.height);
+                break;
+            case RCTCameraModule.RCT_CAMERA_CAPTURE_QUALITY_CUSTOM_MID:
+                pictureSize = getBestSize(supportedSizes, RESOLUTION_MID.width, RESOLUTION_MID.height);
+                break;
+            case RCTCameraModule.RCT_CAMERA_CAPTURE_QUALITY_CUSTOM_HIGH:
+                pictureSize = getBestSize(supportedSizes, RESOLUTION_HIGH.width, RESOLUTION_HIGH.height);
                 break;
         }
 
         if (pictureSize != null) {
             parameters.setPictureSize(pictureSize.width, pictureSize.height);
-            //parameters.setPictureSize(1280, 720);  //640*480 34912
             camera.setParameters(parameters);
         }
     }
