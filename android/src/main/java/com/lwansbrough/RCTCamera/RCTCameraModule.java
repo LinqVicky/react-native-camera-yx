@@ -68,7 +68,11 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
     public static final String RCT_CAMERA_CAPTURE_QUALITY_1080P = "1080p";
     public static final String RCT_CAMERA_CAPTURE_QUALITY_720P = "720p";
     public static final String RCT_CAMERA_CAPTURE_QUALITY_480P = "480p";
-    public static final String RCT_CAMERA_CAPTURE_QUALITY_CUSTOM = "custom";
+    public static final String RCT_CAMERA_CAPTURE_QUALITY_CUSTOM_LOW = "customLow";
+    public static final String RCT_CAMERA_CAPTURE_QUALITY_CUSTOM_NORMAL = "customNormal";
+    public static final String RCT_CAMERA_CAPTURE_QUALITY_CUSTOM_DEFAUL = "customDefault";
+    public static final String RCT_CAMERA_CAPTURE_QUALITY_CUSTOM_MID = "customMid";
+    public static final String RCT_CAMERA_CAPTURE_QUALITY_CUSTOM_HIGH = "customHigh";
     public static final int MEDIA_TYPE_IMAGE = 1;
     public static final int MEDIA_TYPE_VIDEO = 2;
 
@@ -191,7 +195,11 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                         put("480p", RCT_CAMERA_CAPTURE_QUALITY_480P);
                         put("720p", RCT_CAMERA_CAPTURE_QUALITY_720P);
                         put("1080p", RCT_CAMERA_CAPTURE_QUALITY_1080P);
-                        put("custom", RCT_CAMERA_CAPTURE_QUALITY_CUSTOM);
+                        put("customLow", RCT_CAMERA_CAPTURE_QUALITY_CUSTOM_LOW);
+                        put("customNormal", RCT_CAMERA_CAPTURE_QUALITY_CUSTOM_NORMAL);
+                        put("customDefault", RCT_CAMERA_CAPTURE_QUALITY_CUSTOM_DEFAUL);
+                        put("customMid", RCT_CAMERA_CAPTURE_QUALITY_CUSTOM_MID);
+                        put("customHigh", RCT_CAMERA_CAPTURE_QUALITY_CUSTOM_HIGH);
                     }
                 });
             }
