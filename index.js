@@ -126,7 +126,7 @@ export default class Camera extends Component {
     captureAudio: false,
     captureMode: CameraManager.CaptureMode.still,
     captureTarget: CameraManager.CaptureTarget.cameraRoll,
-    captureQuality: CameraManager.CaptureQuality.high,
+    captureQuality: CameraManager.CaptureQuality.customDefault,//CameraManager.CaptureQuality.high 修改默认值为新增的customDefault
     defaultOnFocusComponent: true,
     flashMode: CameraManager.FlashMode.off,
     playSoundOnCapture: true,
