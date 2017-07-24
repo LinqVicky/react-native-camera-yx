@@ -28,6 +28,11 @@ import android.graphics.Color;
 import android.graphics.Paint;  
 import android.graphics.Typeface;  
 import android.graphics.Bitmap.Config; 
+import android.text.Layout.Alignment;
+import android.text.StaticLayout;
+import android.text.TextPaint;
+import android.text.TextUtils;
+import android.widget.Toast;
 
 public class MutableImage {
     private static final String TAG = "RNCamera";
@@ -133,31 +138,158 @@ public class MutableImage {
         this.hasBeenReoriented = true;
     }
 
+    /**
+     * 照片上添加拍照日期时间
+     * 
+     * @param resolution
+     *            图片的分辨率，见枚举变量PicRes（用于处理水印文字的大小）
+     * @param photoBitmap
+     * @param dateTime
+     * @param address
+     * @return
+     */
+    private static Bitmap addTimeOnPhoto(Bitmap photoBitmap,
+            String dateTime, String address, String shopName) {
+        Canvas mCanvas = null;
+        if (photoBitmap == null || dateTime == null || address == null) {
+            return photoBitmap;
+        }
+        if (shopName == null) {
+            shopName = "";
+        }
+        int fontSize = 25;
+        int mWidth = photoBitmap.getWidth();
+        int mHeight = photoBitmap.getHeight();
+
+        try {
+            mCanvas = new Canvas(photoBitmap); // 初始化画布
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (mCanvas == null) {
+                return photoBitmap;
+            }
+        }
+        // 设置画笔
+        TextPaint textPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG | Paint.DEV_KERN_TEXT_FLAG);
+
+        int size = (mWidth > mHeight) ? mHeight : mWidth;
+        textPaint.setTextSize(fontSize * size / 480);
+
+        textPaint.setTypeface(Typeface.DEFAULT);
+        textPaint.setColor(Color.RED);
+
+        // 获取文字所占的宽度
+        String str = address + "\n" + dateTime;
+        float txtWidth = 0;
+        float timeWidth = 0;
+        float addressWidth = 0;
+        if (address != null) {
+            addressWidth = textPaint.measureText(address);
+            if (addressWidth > (mWidth * 2)) {
+                int i;
+                String addreStr = "";
+                for (i = address.length(); i > 0; i--) {
+                    addreStr = "..." + address.substring(address.length() - i, address.length());
+                    float width = textPaint.measureText(addreStr);
+                    if (width < mWidth * 2) {
+                        break;
+                    }
+                }
+                str = addreStr + "\n" + dateTime;
+            }
+        }
+        if (shopName.length() > 10) {
+            shopName = shopName.substring(0, 9) + "...";
+        }
+        if (shopName.length() > 0) {
+            str = shopName + "\n" + str;
+        }
+        if (dateTime != null) {
+            timeWidth = textPaint.measureText(dateTime);
+        }
+        txtWidth = Math.max(timeWidth, addressWidth);
+
+        if (mHeight > 200) {
+            float mPointX;
+            if (mWidth > txtWidth) {
+                // 居中显示
+                mPointX = (mWidth - txtWidth) / 2;
+            } else {
+                mPointX = 0;
+            }
+
+            CharSequence tempStr = str.subSequence(0, str.length());
+
+            StaticLayout layout = new StaticLayout(tempStr, textPaint, mWidth,
+                    Alignment.ALIGN_NORMAL, 1.0F, 0.0F, true);
+
+            int lineNum = findCharNum(str, '\n', str.length()) + 2;
+            // 水印底部多留一行空白
+            int addressLineNum = (int) (addressWidth / size) + 1;
+            lineNum += addressLineNum;
+
+            int startPos = mHeight - (lineNum * fontSize * size / 480);
+
+            mCanvas.translate(mPointX, startPos);
+            layout.draw(mCanvas);
+
+            mCanvas.save(Canvas.ALL_SAVE_FLAG);
+            mCanvas.restore();
+        }
+        if (mCanvas != null) {
+            mCanvas = null;
+        }
+        if (textPaint != null) {
+            textPaint = null;
+        }
+
+        return photoBitmap;
+        // return mBitmap;
+    }
+
     private static Bitmap toBitmap(byte[] data,String watermark) {
         try {
             ByteArrayInputStream inputStream = new ByteArrayInputStream(data);
             Bitmap photo = BitmapFactory.decodeStream(inputStream);
             inputStream.close();
+
             //添加文字水印
             if(null != watermark && !watermark.isEmpty()){
-                int w = photo.getWidth();  
-                int h = photo.getHeight();  
-                Bitmap bmpTemp = Bitmap.createBitmap(w, h, Config.ARGB_8888);  
-                String mstrTitle = watermark;// "时间:2017-07-15 15:00:00;地点:软件园二期观日路46号";
-                Canvas canvas = new Canvas(bmpTemp);  
-                Paint p = new Paint();  
-                String familyName = "宋体";  
-                Typeface font = Typeface.create(familyName, Typeface.NORMAL);  
-                p.setColor(Color.RED);  
-                p.setTypeface(font);  
-                p.setTextSize(20);  
-                canvas.drawBitmap(photo, 0, 0, p);  
-                //文字画的地方  
-                canvas.drawText(mstrTitle, 0, h-30, p);  
-                canvas.save(Canvas.ALL_SAVE_FLAG);  
-                canvas.restore();  
+                // int fontSize = 25;
+                // int w = photo.getWidth();  
+                // int h = photo.getHeight();  
+                // Bitmap bmpTemp = Bitmap.createBitmap(w, h, Config.ARGB_8888);  
+                // String mstrTitle = watermark;// "时间:2017-07-15 15:00:00;地点:软件园二期观日路46号";
+                // Canvas canvas = new Canvas(bmpTemp);  
+                // Paint p = new Paint();  
+                // String familyName = "宋体";  
+                // Typeface font = Typeface.create(familyName, Typeface.NORMAL);  
+                // p.setColor(Color.RED);  
+                // p.setTypeface(font);  
+                // p.setTextSize(fontSize);  
+                // canvas.drawBitmap(photo, 0, 0, p);  
+                // //文字画的地方  
+                // canvas.drawText(mstrTitle, 0, h-30, p);  
+                // canvas.save(Canvas.ALL_SAVE_FLAG);  
+                // canvas.restore();  
 
-                return bmpTemp;
+                String[] markinfo = watermark.split(";");
+                String shopName = markinfo[0];
+                String address = markinfo[1];
+                String dateTime = markinfo[2];
+            
+                // 产生缩放后的Bitmap对象
+                Bitmap resizeBitmap = photo.copy(Config.RGB_565, true);
+                // 记得释放资源
+                if (!photo.isRecycled()) {
+                    photo.recycle();
+                    photo = null;
+                }
+
+                resizeBitmap = addTimeOnPhoto(resizeBitmap, dateTime, address, shopName);
+
+                return resizeBitmap;
             }
             return photo;
         } catch (IOException e) {
@@ -295,5 +427,31 @@ public class MutableImage {
             sb.append("/1000,");
             return sb.toString();
         }
+    }
+
+    /**
+     * 查找指定字符的数量
+     * 
+     * @param str
+     *            待查找的字符串
+     * @param findchar
+     *            待查找字符
+     * @param maxlen
+     *            待查找字符串的最大长度
+     * @return 指定字符的数量
+     */
+    public static int findCharNum(String str, char findchar, int maxlen) {
+        int i, numchar = 0;
+        if (str == null) {
+            return 0;
+        }
+        maxlen = (str.length() > maxlen) ? maxlen : str.length();
+        for (i = 0; i < maxlen; i++) {
+            if (str.charAt(i) == findchar) {
+                numchar++;
+            }
+        }
+
+        return numchar;
     }
 }
