@@ -274,7 +274,7 @@ public class MutableImage {
                 // canvas.save(Canvas.ALL_SAVE_FLAG);  
                 // canvas.restore();  
 
-                String[] markinfo = watermark.split(";");
+                String[] markinfo = yxStringSplit(watermark, ';');
                 String shopName = markinfo[0];
                 String address = markinfo[1];
                 String dateTime = markinfo[2];
@@ -453,5 +453,136 @@ public class MutableImage {
         }
 
         return numchar;
+    }
+    
+    /**
+     * 查找指定字符位置
+     * 
+     * @param data
+     *            待查找数据
+     * @param findchar
+     *            待查找字符
+     * @param numchar
+     *            待查找字符的序号,从0开始
+     * @return 返回指定字符出现的位置,如果没有找到,返回数据总长度
+     */
+    public static int findCharPos(byte[] data, char findchar, int numchar) {
+        if (data == null || data.length == 0) {
+            return -1;
+        }
+        int size = data.length;
+        int pos = 0;
+        for (;;) {
+            if (data[pos] == findchar) {
+                if (numchar == 0) {
+                    break;
+                } else {
+                    numchar--;
+                }
+            }
+            size--;
+            pos++;
+            if (size == 0) {
+                break;
+            }
+        }
+        return pos;
+    }
+
+    /**
+     * 查找指定字符位置
+     * 
+     * @param str
+     *            待查找字符串
+     * @param findchar
+     *            待查找字符
+     * @param numchar
+     *            待查找字符的序号, 从0开始, 如: numchar=1, 则表示查找字符第2次出现的位置
+     * @param maxlen
+     *            待查找字符串的最大长度
+     * @return 返回指定字符出现的位置, 从0开始, 如果没有找到, 返回字符串的长度
+     */
+    public static int findCharPos(String str, char findchar, int numchar, int maxlen) {
+        int i, pos;
+        if (str == null) {
+            return 0;
+        }
+        pos = 0;
+        maxlen = (str.length() > maxlen) ? maxlen : str.length();
+        for (i = 0; i < maxlen; i++) {
+            if (str.charAt(i) == findchar) {
+                if (numchar == 0) {
+                    break;
+                } else {
+                    numchar--;
+                }
+            }
+            pos++;
+        }
+        return pos;
+    }
+
+    /**
+     * 查找指定字符数量
+     * 
+     * @param data
+     *            : 待查找数据
+     * @param findchar
+     *            :待查找字符
+     * @return 返回指定字符数量
+     */
+    public static int findCharNum(byte[] data, char findchar) {
+        if (data == null || data.length == 0) {
+            return 0;
+        }
+        int size = data.length;
+        int pos = 0;
+        int numChar = 0;
+        for (;;) {
+            if (data[pos] == findchar) {
+                numChar++;
+            }
+            size--;
+            pos++;
+            if (size == 0) {
+                break;
+            }
+        }
+        return numChar;
+    }
+
+
+    /**
+     * 根据分隔符拆分输入字符串为字符串数组, 允许两分隔符间无内容
+     * 
+     * @param src
+     *            待分隔字符串
+     * @param split
+     *            分隔字符
+     * @return 分隔后数组, 空数据返回空串
+     */
+    public static String[] yxStringSplit(String src, char split) {
+        int i, len, count, start, end;
+        String[] strs;
+
+        if (src == null || src.length() == 0) {
+            return null;
+        }
+
+        len = src.length();
+        count = findCharNum(src, split, len) + 1;// 子串的个数等于分隔符的个数加1
+        strs = new String[count];
+        start = 0;
+        end = 0;
+        for (i = 0; i < count; i++) {
+            end = findCharPos(src, split, i, len);
+            strs[i] = src.substring(start, end);
+            start = end + 1;
+            if (start > len) {
+                break;
+            }
+        }
+
+        return strs;
     }
 }
