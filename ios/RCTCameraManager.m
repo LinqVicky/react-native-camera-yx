@@ -101,7 +101,13 @@ RCT_EXPORT_MODULE();
                @"720p": @(RCTCameraCaptureSessionPreset720p),
                @"AVCaptureSessionPreset1280x720": @(RCTCameraCaptureSessionPreset720p),
                @"1080p": @(RCTCameraCaptureSessionPreset1080p),
-               @"AVCaptureSessionPreset1920x1080": @(RCTCameraCaptureSessionPreset1080p)
+               @"AVCaptureSessionPreset1920x1080": @(RCTCameraCaptureSessionPreset1080p),
+               @"preview":@(RCTCameraCaptureSessionPresetPreview),
+               @"customLow":@(RCTCameraCaptureSessionPresetCustomLow),
+               @"customNormal":@(RCTCameraCaptureSessionPresetCustomNormal),
+               @"customDefault":@(RCTCameraCaptureSessionPresetCustomDefault),
+               @"customMid":@(RCTCameraCaptureSessionPresetCustomMid),
+               @"customHigh":@(RCTCameraCaptureSessionPresetCustomHigh),
                },
            @"CaptureTarget": @{
                @"memory": @(RCTCameraCaptureTargetMemory),
@@ -159,6 +165,24 @@ RCT_CUSTOM_VIEW_PROPERTY(captureQuality, NSInteger, RCTCamera) {
       break;
     case RCTCameraCaptureSessionPreset480p:
       qualityString = AVCaptureSessionPreset640x480;
+      break;
+    case RCTCameraCaptureSessionPresetPreview:
+      qualityString=AVCaptureSessionPreset3840x2160;
+      break;
+    case RCTCameraCaptureSessionPresetCustomLow:
+      qualityString=AVCaptureSessionPreset352x288;
+      break;
+    case RCTCameraCaptureSessionPresetCustomMid:
+      qualityString=AVCaptureSessionPreset1280x720;
+      break;
+    case RCTCameraCaptureSessionPresetCustomHigh:
+      qualityString=AVCaptureSessionPresetiFrame1280x720;
+      break;
+    case RCTCameraCaptureSessionPresetCustomNormal:
+      qualityString=AVCaptureSessionPreset640x480;
+      break;
+    case RCTCameraCaptureSessionPresetCustomDefault:
+      qualityString=AVCaptureSessionPreset640x480;
       break;
   }
 
@@ -552,7 +576,99 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
         [self captureStill:target options:options orientation:orientation resolve:resolve reject:reject];
     }
 }
++/**
+ *	@brief	创建图片，并加上文字 缩放图片为指定大小
+ *
+ *	@param 	size 	缩放的图片大小
+ *
+ *	@return	缩放后的图片
+ */
+-(UIImage*)createImage:(CGSize)size text:(NSString*)text orientation:(UIImageOrientation)orientation
+{    
+    if (NULL != UIGraphicsBeginImageContextWithOptions)
+        UIGraphicsBeginImageContextWithOptions(size, YES, 0);
+    else
+        UIGraphicsBeginImageContext(size);
+    
+    // 绘制改变大小的图片
+    [self drawInRect:CGRectMake(0, 0, size.width, size.height)];
+    
+    
+    // 从当前context中创建一个改变大小后的图片
+    UIImage* scaledImage = UIGraphicsGetImageFromCurrentImageContext();
+    
+    // 使当前的context出堆栈
+    UIGraphicsEndImageContext();
+    
+    // 返回新的改变大小后的图片
+    if (text == nil) {
+        return scaledImage;
+    }
+    
+    
+    return [self addText:scaledImage text:text orientation:orientation];
+}
 
+/**
+ *	@brief	为图片加上文字水印 文字为时间和地址
+ *
+ *	@param 	text 	内容
+ *
+ *	@return	为图片增加文字
+ */
+-(UIImage *)addText:(UIImage *)img text:(NSString *)text1 orientation:(UIImageOrientation)orientation
+{
+    int w = img.size.width;
+    int h = img.size.height;
+    UIGraphicsBeginImageContext(img.size);
+    CGContextRef cntxRef = UIGraphicsGetCurrentContext();
+    [img drawInRect:CGRectMake(0, 0, w, h)];
+    CGContextSaveGState(cntxRef);
+    int temp=-1;
+    switch (orientation) {
+        case UIImageOrientationUp://上
+            CGContextTranslateCTM(cntxRef, 0, h);
+            temp=w;
+            w=h;
+            h=temp;
+            CGContextRotateCTM(cntxRef, -M_PI_2);
+            break;
+        
+        case UIImageOrientationDown://下
+            CGContextTranslateCTM(cntxRef, w, 0);
+            temp=w;
+            w=h;
+            h=temp;
+            CGContextRotateCTM(cntxRef, M_PI_2);
+            break;
+        case UIImageOrientationLeft://左
+            break;
+        case UIImageOrientationRight://右
+            CGContextTranslateCTM(cntxRef, w, h);
+            CGContextRotateCTM(cntxRef, M_PI);
+            break;
+    }
+    [[UIColor redColor] set];
+    NSArray *array = [text1 componentsSeparatedByString:@";"];
+    NSMutableString *value=[[NSMutableString alloc]init];
+    NSInteger rowNum=0;
+    for(int i=0;i<[array count];i++){
+        NSString *item=array[i];
+        if(item!=nil&&item.length>0){
+            rowNum++;
+            [value appendString:item];
+            if(i<[array count]-1){
+                [value appendString:@"\n"];
+            }
+        }
+    }
+    [value drawInRect:CGRectMake(10, h-rowNum*30, w-20, rowNum*30) withFont:[UIFont systemFontOfSize:20]];
+    UIImage *aimg = UIGraphicsGetImageFromCurrentImageContext();
+    CGContextRestoreGState(cntxRef);
+    UIGraphicsEndImageContext();
+    img = nil;
+    return aimg;
+}
 - (void)captureStill:(NSInteger)target options:(NSDictionary *)options orientation:(AVCaptureVideoOrientation)orientation resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject
 {
   dispatch_async(self.sessionQueue, ^{
@@ -596,7 +712,31 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
 
           // create cgimage
           CGImageRef cgImage = CGImageSourceCreateImageAtIndex(source, 0, NULL);
-
+          if([[options allKeys] containsObject:@"watermark"]&&iii){
+                NSString *value=[options objectForKey:@"watermark"];
+                if(value==nil){
+                    value=@"";
+                }
+                UIImage* image = [UIImage imageWithCGImage: cgImage];
+                AVCaptureVideoOrientation curDeviceOrientation = (AVCaptureVideoOrientation)[[UIDevice currentDevice] orientation];
+                NSInteger orientation=-1;
+                switch (curDeviceOrientation) {
+                    case AVCaptureVideoOrientationPortrait:
+                        orientation=UIImageOrientationUp;
+                        break;
+                    case AVCaptureVideoOrientationPortraitUpsideDown:
+                        orientation=UIImageOrientationDown;
+                        break;
+                    case AVCaptureVideoOrientationLandscapeRight:
+                        orientation=UIImageOrientationLeft;
+                        break;
+                    case AVCaptureVideoOrientationLandscapeLeft:
+                        orientation=UIImageOrientationRight;
+                        break;
+                }
+                UIImage* newImage=[self createImage:image.size text:value orientation:orientation];
+                cgImage=newImage.CGImage;
+            }
           // Rotate it
           CGImageRef rotatedCGImage;
           if ([options objectForKey:@"rotation"]) {
@@ -644,7 +784,6 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
 
           [self saveImage:rotatedImageData target:target metadata:imageMetadata resolve:resolve reject:reject];
 
-          CGImageRelease(rotatedCGImage);
         }
         else {
           reject(RCTErrorUnspecified, nil, RCTErrorWithMessage(error.description));
