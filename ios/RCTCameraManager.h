@@ -17,6 +17,13 @@ typedef NS_ENUM(NSInteger, RCTCameraCaptureSessionPreset) {
   RCTCameraCaptureSessionPreset480p = 4,
   RCTCameraCaptureSessionPreset720p = 5,
   RCTCameraCaptureSessionPreset1080p = 6
+  
+  RCTCameraCaptureSessionPresetPreview = 7,
+  RCTCameraCaptureSessionPresetCustomLow=8,
+  RCTCameraCaptureSessionPresetCustomNormal=9,
+  RCTCameraCaptureSessionPresetCustomDefault=10,
+  RCTCameraCaptureSessionPresetCustomMid=11,
+  RCTCameraCaptureSessionPresetCustomHigh=12,
 };
 
 typedef NS_ENUM(NSInteger, RCTCameraCaptureMode) {
