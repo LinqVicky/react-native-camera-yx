@@ -101,13 +101,7 @@ RCT_EXPORT_MODULE();
                @"720p": @(RCTCameraCaptureSessionPreset720p),
                @"AVCaptureSessionPreset1280x720": @(RCTCameraCaptureSessionPreset720p),
                @"1080p": @(RCTCameraCaptureSessionPreset1080p),
-               @"AVCaptureSessionPreset1920x1080": @(RCTCameraCaptureSessionPreset1080p),
-               @"preview":@(RCTCameraCaptureSessionPresetPreview),
-               @"customLow":@(RCTCameraCaptureSessionPresetCustomLow),
-               @"customNormal":@(RCTCameraCaptureSessionPresetCustomNormal),
-               @"customDefault":@(RCTCameraCaptureSessionPresetCustomDefault),
-               @"customMid":@(RCTCameraCaptureSessionPresetCustomMid),
-               @"customHigh":@(RCTCameraCaptureSessionPresetCustomHigh),
+               @"AVCaptureSessionPreset1920x1080": @(RCTCameraCaptureSessionPreset1080p)
                },
            @"CaptureTarget": @{
                @"memory": @(RCTCameraCaptureTargetMemory),
@@ -165,24 +159,6 @@ RCT_CUSTOM_VIEW_PROPERTY(captureQuality, NSInteger, RCTCamera) {
       break;
     case RCTCameraCaptureSessionPreset480p:
       qualityString = AVCaptureSessionPreset640x480;
-      break;
-    case RCTCameraCaptureSessionPresetPreview:
-      qualityString=AVCaptureSessionPreset3840x2160;
-      break;
-    case RCTCameraCaptureSessionPresetCustomLow:
-      qualityString=AVCaptureSessionPreset352x288;
-      break;
-    case RCTCameraCaptureSessionPresetCustomMid:
-      qualityString=AVCaptureSessionPreset1280x720;
-      break;
-    case RCTCameraCaptureSessionPresetCustomHigh:
-      qualityString=AVCaptureSessionPresetiFrame1280x720;
-      break;
-    case RCTCameraCaptureSessionPresetCustomNormal:
-      qualityString=AVCaptureSessionPreset640x480;
-      break;
-    case RCTCameraCaptureSessionPresetCustomDefault:
-      qualityString=AVCaptureSessionPreset640x480;
       break;
   }
 
@@ -620,31 +596,7 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
 
           // create cgimage
           CGImageRef cgImage = CGImageSourceCreateImageAtIndex(source, 0, NULL);
-            if([[options allKeys] containsObject:@"watermark"]&&iii){
-                NSString *value=[options objectForKey:@"watermark"];
-                if(value==nil){
-                    value=@"";
-                }
-                UIImage* image = [UIImage imageWithCGImage: cgImage];
-                AVCaptureVideoOrientation curDeviceOrientation = (AVCaptureVideoOrientation)[[UIDevice currentDevice] orientation];
-                NSInteger orientation=-1;
-                switch (curDeviceOrientation) {
-                    case AVCaptureVideoOrientationPortrait:
-                        orientation=UIImageOrientationUp;
-                        break;
-                    case AVCaptureVideoOrientationPortraitUpsideDown:
-                        orientation=UIImageOrientationDown;
-                        break;
-                    case AVCaptureVideoOrientationLandscapeRight:
-                        orientation=UIImageOrientationLeft;
-                        break;
-                    case AVCaptureVideoOrientationLandscapeLeft:
-                        orientation=UIImageOrientationRight;
-                        break;
-                }
-                UIImage* newImage=[image createImage:image.size text:value orientation:orientation];
-                cgImage=newImage.CGImage;
-            }
+
           // Rotate it
           CGImageRef rotatedCGImage;
           if ([options objectForKey:@"rotation"]) {
@@ -692,6 +644,7 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
 
           [self saveImage:rotatedImageData target:target metadata:imageMetadata resolve:resolve reject:reject];
 
+          CGImageRelease(rotatedCGImage);
         }
         else {
           reject(RCTErrorUnspecified, nil, RCTErrorWithMessage(error.description));
