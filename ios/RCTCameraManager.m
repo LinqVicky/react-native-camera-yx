@@ -578,7 +578,7 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
         [self captureStill:target options:options orientation:orientation resolve:resolve reject:reject];
     }
 }
-+/**
+/**
  *	@brief	创建图片，并加上文字 缩放图片为指定大小
  *
  *	@param 	size 	缩放的图片大小
