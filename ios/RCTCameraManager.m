@@ -11,7 +11,9 @@
 #import <ImageIO/ImageIO.h>
 #import "RCTSensorOrientationChecker.h"
 
-@interface RCTCameraManager ()
+@interface RCTCameraManager (){
+    AVCaptureVideoOrientation myorientation;
+}
 
 @property (strong, nonatomic) RCTSensorOrientationChecker * sensorOrientationChecker;
 @property (assign, nonatomic) NSInteger* flashMode;
@@ -583,15 +585,16 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
  *
  *	@return	缩放后的图片
  */
--(UIImage*)createImage:(CGSize)size text:(NSString*)text orientation:(UIImageOrientation)orientation
+-(UIImage*)createImage:(UIImage*)image text:(NSString*)text orientation:(UIImageOrientation)orientation
 {    
+    CGSize size=image.size;
     if (NULL != UIGraphicsBeginImageContextWithOptions)
         UIGraphicsBeginImageContextWithOptions(size, YES, 0);
     else
         UIGraphicsBeginImageContext(size);
     
     // 绘制改变大小的图片
-    [self drawInRect:CGRectMake(0, 0, size.width, size.height)];
+    [image drawInRect:CGRectMake(0, 0, size.width, size.height)];
     
     
     // 从当前context中创建一个改变大小后的图片
@@ -671,6 +674,7 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
 }
 - (void)captureStill:(NSInteger)target options:(NSDictionary *)options orientation:(AVCaptureVideoOrientation)orientation resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject
 {
+  myorientation=orientation;
   dispatch_async(self.sessionQueue, ^{
 #if TARGET_IPHONE_SIMULATOR
       CGSize size = CGSizeMake(720, 1280);
@@ -712,15 +716,14 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
 
           // create cgimage
           CGImageRef cgImage = CGImageSourceCreateImageAtIndex(source, 0, NULL);
-          if([[options allKeys] containsObject:@"watermark"]&&iii){
+          if([[options allKeys] containsObject:@"watermark"]){
                 NSString *value=[options objectForKey:@"watermark"];
                 if(value==nil){
                     value=@"";
                 }
                 UIImage* image = [UIImage imageWithCGImage: cgImage];
-                AVCaptureVideoOrientation curDeviceOrientation = (AVCaptureVideoOrientation)[[UIDevice currentDevice] orientation];
                 NSInteger orientation=-1;
-                switch (curDeviceOrientation) {
+                switch (myorientation) {
                     case AVCaptureVideoOrientationPortrait:
                         orientation=UIImageOrientationUp;
                         break;
@@ -734,7 +737,7 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
                         orientation=UIImageOrientationRight;
                         break;
                 }
-                UIImage* newImage=[self createImage:image.size text:value orientation:orientation];
+                UIImage* newImage=[self createImage:image text:value orientation:orientation];
                 cgImage=newImage.CGImage;
             }
           // Rotate it
