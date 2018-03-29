@@ -607,7 +607,7 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
     if (text == nil) {
         return scaledImage;
     }
-    
+//    return scaledImage;
     
     return [self addText:scaledImage text:text orientation:orientation];
 }
@@ -627,30 +627,30 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
     CGContextRef cntxRef = UIGraphicsGetCurrentContext();
     [img drawInRect:CGRectMake(0, 0, w, h)];
     CGContextSaveGState(cntxRef);
-    int temp=-1;
-    switch (orientation) {
-        case UIImageOrientationUp://上
-            CGContextTranslateCTM(cntxRef, 0, h);
-            temp=w;
-            w=h;
-            h=temp;
-            CGContextRotateCTM(cntxRef, -M_PI_2);
-            break;
-        
-        case UIImageOrientationDown://下
-            CGContextTranslateCTM(cntxRef, w, 0);
-            temp=w;
-            w=h;
-            h=temp;
-            CGContextRotateCTM(cntxRef, M_PI_2);
-            break;
-        case UIImageOrientationLeft://左
-            break;
-        case UIImageOrientationRight://右
-            CGContextTranslateCTM(cntxRef, w, h);
-            CGContextRotateCTM(cntxRef, M_PI);
-            break;
-    }
+//    int temp=-1;
+//    switch (orientation) {
+//        case UIImageOrientationUp://上
+//            CGContextTranslateCTM(cntxRef, 0, h);
+//            temp=w;
+//            w=h;
+//            h=temp;
+//            CGContextRotateCTM(cntxRef, -M_PI_2);
+//            break;
+//
+//        case UIImageOrientationDown://下
+//            CGContextTranslateCTM(cntxRef, w, 0);
+//            temp=w;
+//            w=h;
+//            h=temp;
+//            CGContextRotateCTM(cntxRef, M_PI_2);
+//            break;
+//        case UIImageOrientationLeft://左
+//            break;
+//        case UIImageOrientationRight://右
+//            CGContextTranslateCTM(cntxRef, w, h);
+//            CGContextRotateCTM(cntxRef, M_PI);
+//            break;
+//    }
     [[UIColor redColor] set];
     NSArray *array = [text1 componentsSeparatedByString:@";"];
     NSMutableString *value=[[NSMutableString alloc]init];
@@ -666,8 +666,9 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
         }
     }
     [value drawInRect:CGRectMake(10, h-rowNum*30, w-20, rowNum*30) withFont:[UIFont systemFontOfSize:20]];
-    UIImage *aimg = UIGraphicsGetImageFromCurrentImageContext();
     CGContextRestoreGState(cntxRef);
+    UIImage *aimg = UIGraphicsGetImageFromCurrentImageContext();
+    
     UIGraphicsEndImageContext();
     img = nil;
     return aimg;
@@ -702,13 +703,12 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
       NSData *imageData = UIImageJPEGRepresentation(image, 1.0);
       [self saveImage:imageData target:target metadata:nil resolve:resolve reject:reject];
 #else
-      [[self.stillImageOutput connectionWithMediaType:AVMediaTypeVideo] setVideoOrientation:orientation];
+      [[self.stillImageOutput connectionWithMediaType:AVMediaTypeVideo] setVideoOrientation:AVCaptureVideoOrientationLandscapeRight];
 
       [self.stillImageOutput captureStillImageAsynchronouslyFromConnection:[self.stillImageOutput connectionWithMediaType:AVMediaTypeVideo] completionHandler:^(CMSampleBufferRef imageDataSampleBuffer, NSError *error) {
 
         if (imageDataSampleBuffer) {
           NSData *imageData = [AVCaptureStillImageOutput jpegStillImageNSDataRepresentation:imageDataSampleBuffer];
-
           // Create image source
           CGImageSourceRef source = CGImageSourceCreateWithData((CFDataRef)imageData, NULL);
           //get all the metadata in the image
@@ -721,7 +721,8 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
                 if(value==nil){
                     value=@"";
                 }
-                UIImage* image = [UIImage imageWithCGImage: cgImage];
+//                UIImage* image = [UIImage imageWithCGImage: cgImage];
+              UIImage* image = [[UIImage alloc]initWithData:imageData];
                 NSInteger orientation=-1;
                 switch (myorientation) {
                     case AVCaptureVideoOrientationPortrait:
@@ -737,7 +738,10 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
                         orientation=UIImageOrientationRight;
                         break;
                 }
-                UIImage* newImage=[self createImage:image text:value orientation:orientation];
+              
+              UIImage *immh = [self fixOrientation:image];
+                UIImage* newImage=[self createImage:immh text:value orientation:orientation];
+//
                 cgImage=newImage.CGImage;
             }
           // Rotate it
@@ -1171,5 +1175,129 @@ didFinishRecordingToOutputFileAtURL:(NSURL *)outputFileURL
         }
     #endif
 }
-
+- (UIImage *)normalizedImage:(UIImage *)img {
+    UIAlertView *al = [[UIAlertView alloc] initWithTitle:@"1111" message:[NSString stringWithFormat:@"%d",myorientation] delegate:self cancelButtonTitle:@"确定" otherButtonTitles:nil, nil];
+    [al show];
+    if (img.imageOrientation == UIImageOrientationUp) return img;
+    UIAlertView *all = [[UIAlertView alloc] initWithTitle:@"dasdad" message:[NSString stringWithFormat:@"%d",myorientation] delegate:self cancelButtonTitle:@"确定" otherButtonTitles:nil, nil];
+    [all show];
+    UIGraphicsBeginImageContextWithOptions(img.size, NO, img.scale);
+    [img drawInRect:(CGRect){0, 0, img.size}];
+    UIImage *normalizedImage = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    return normalizedImage;
+}
+- (UIImage *)fixOrientation:(UIImage *)img {
+    
+    NSInteger orientation=-1;
+    switch (myorientation) {
+        case AVCaptureVideoOrientationPortrait:
+            orientation=UIImageOrientationRight;
+            img = [self changSize:img];
+            break;
+        case AVCaptureVideoOrientationPortraitUpsideDown:
+            orientation=UIImageOrientationLeft;
+            img = [self changSize:img];
+            break;
+        case AVCaptureVideoOrientationLandscapeRight:
+            orientation=UIImageOrientationUp;
+            break;
+        case AVCaptureVideoOrientationLandscapeLeft:
+            orientation=UIImageOrientationDown;
+            break;
+    }
+    if (orientation == UIImageOrientationUp){
+        return img;
+    }
+    
+    CGAffineTransform transform = CGAffineTransformIdentity;
+    
+         switch (orientation) {
+                     case UIImageOrientationDown:
+                     case UIImageOrientationDownMirrored:
+                         transform = CGAffineTransformTranslate(transform, img.size.width, img.size.height);
+                         transform = CGAffineTransformRotate(transform, M_PI);
+                         break;
+            
+                     case UIImageOrientationLeft:
+                     case UIImageOrientationLeftMirrored:
+                         transform = CGAffineTransformTranslate(transform, img.size.width, 0);
+                         transform = CGAffineTransformRotate(transform, M_PI_2);
+                         break;
+            
+                     case UIImageOrientationRight:
+                     case UIImageOrientationRightMirrored:
+                         transform = CGAffineTransformTranslate(transform, 0, img.size.height);
+                         transform = CGAffineTransformRotate(transform, -M_PI_2);
+                         break;
+                     case UIImageOrientationUp:
+                     case UIImageOrientationUpMirrored:
+                         break;
+             }
+    
+         switch (orientation) {
+                     case UIImageOrientationUpMirrored:
+                     case UIImageOrientationDownMirrored:
+                         transform = CGAffineTransformTranslate(transform, img.size.width, 0);
+                         transform = CGAffineTransformScale(transform, -1, 1);
+                         break;
+            
+                     case UIImageOrientationLeftMirrored:
+                     case UIImageOrientationRightMirrored:
+                         transform = CGAffineTransformTranslate(transform, img.size.height, 0);
+                         transform = CGAffineTransformScale(transform, -1, 1);
+                         break;
+                     case UIImageOrientationUp:
+                     case UIImageOrientationDown:
+                     case UIImageOrientationLeft:
+                     case UIImageOrientationRight:
+                         break;
+             }
+    
+         // Now we draw the underlying CGImage into a new context, applying the transform
+         // calculated above.
+         CGContextRef ctx = CGBitmapContextCreate(NULL, img.size.width, img.size.height,
+                                                                                                CGImageGetBitsPerComponent(img.CGImage), 0,
+                                                                                                CGImageGetColorSpace(img.CGImage),
+                                                                                                CGImageGetBitmapInfo(img.CGImage));
+         CGContextConcatCTM(ctx, transform);
+         switch (orientation) {
+                     case UIImageOrientationLeft:
+                     case UIImageOrientationLeftMirrored:
+                     case UIImageOrientationRight:
+                     case UIImageOrientationRightMirrored:
+                         // Grr...
+                         CGContextDrawImage(ctx, CGRectMake(0,0,img.size.height,img.size.width), img.CGImage);
+                         break;
+            
+                     default:
+                         CGContextDrawImage(ctx, CGRectMake(0,0,img.size.width,img.size.height), img.CGImage);
+                         break;
+             }
+    
+         // And now we just create a new UIImage from the drawing context
+         CGImageRef cgimg = CGBitmapContextCreateImage(ctx);
+         UIImage *imgg = [UIImage imageWithCGImage:cgimg];
+         CGContextRelease(ctx);
+         CGImageRelease(cgimg);
+         return imgg;
+     }
+-(UIImage *)changSize:(UIImage *)img{
+    CGSize size=img.size;
+    if (size.height > size.width) {
+        return img;
+    }
+    CGSize newSize = CGSizeMake(480, 640);
+    UIGraphicsBeginImageContext(newSize);
+    // 绘制改变宽高
+    [img drawInRect:CGRectMake(0, 0, newSize.width, newSize.height)];
+    
+    
+    // 从当前context中创建一个改变大小后的图片
+    UIImage* scaledImage = UIGraphicsGetImageFromCurrentImageContext();
+    
+    // 使当前的context出堆栈
+    UIGraphicsEndImageContext();
+    return scaledImage;
+}
 @end
